@@ -7,7 +7,6 @@ interface PaginationProps {
 const Pagination = ({ currentPage, totalPages, onPageChange }: PaginationProps) => {
   if (totalPages <= 0) return null;
 
-  // Function to determine which page numbers to display based on requirements
   const getPageNumbers = (): number[] => {
     const pageNumbers: number[] = [];
     
