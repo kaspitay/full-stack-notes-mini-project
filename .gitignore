@@ -1,6 +1,11 @@
 node_modules
+data/notes_0.json
+data/notes_1.json
+data/notes_10.json
+data/notes_11.json
 data/notes_200.json
 tmp_submission_check
 tmp_submission_check_extended
 presubmission_extended.sh
 presubmission_fixed.sh
+package-lock.json

@@ -94,3 +94,7 @@
   background-color: #e6f2ff;
   border-color: #0366d6;
 }
+
+.pagination button:disabled {
+  cursor: default;
+}
