@@ -4,4 +4,3 @@ tmp_submission_check
 tmp_submission_check_extended
 presubmission_extended.sh
 presubmission_fixed.sh
-package-lock.json
