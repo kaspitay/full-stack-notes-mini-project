@@ -1,11 +1,46 @@
-node_modules
-data/notes_0.json
-data/notes_1.json
-data/notes_10.json
-data/notes_11.json
-data/notes_200.json
-tmp_submission_check
-tmp_submission_check_extended
-presubmission_extended.sh
-presubmission_fixed.sh
-package-lock.json
+# Dependencies
+/backend/node_modules
+/frontend/node_modules
+
+# Environment files
+/backend/.env
+
+# Logs
+/backend/log.txt
+
+# Build output
+/frontend/dist
+/frontend/.vite
+
+# Package locks (as requested by the assignment)
+/backend/package-lock.json
+/frontend/package-lock.json
+
+# Testing artifacts
+/frontend/test-results
+/frontend/playwright-report
+/frontend/.playwright
+
+# Temporary files
+/tmp_submission_check
+/tmp_submission_check_extended
+/presubmission_extended.sh
+/presubmission_fixed.sh
+
+# Data files (these should be generated, not committed)
+/data/*.json
+/backend/data/*.json
+
+# Scripts (utility scripts not needed for the assignment)
+/backend/scripts/seed-database.js
+../generate-notes.js
+
+# Zip files (these are for submissions only)
+*.zip
+/backend/backend.zip
+/frontend/frontend.zip
+/data.zip
+
+# OS specific
+.DS_Store
+**/.DS_Store
