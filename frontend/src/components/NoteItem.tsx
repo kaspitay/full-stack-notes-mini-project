@@ -1,4 +1,3 @@
-
 import { Note } from '../types';
 
 interface NoteItemProps {
@@ -61,7 +60,7 @@ const NoteItem = ({
               Edit
             </button>
             <button 
-              data-testid={`delete-${note._id}`}
+              name={`delete-${note._id}`}
               onClick={() => onDelete(note._id)}
             >
               Delete

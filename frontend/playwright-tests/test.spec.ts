@@ -50,7 +50,8 @@ test.describe('Notes CRUD operations', () => {
     const noteId = await page.locator('.note').first().getAttribute('data-testid');
     const noteText = await page.locator('.note').first().textContent();
     
-    await page.locator(`button[data-testid="delete-${noteId}"]`).click();
+    // Fixed: Using name attribute instead of data-testid for delete button
+    await page.locator(`button[name="delete-${noteId}"]`).click();
     
     // Wait for notification
     await page.waitForSelector('.notification:has-text("deleted")');
