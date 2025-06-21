@@ -1,10 +1,13 @@
 
+import { useAuth } from '../contexts/AuthContext';
+
 interface AddNoteFormProps {
   isAdding: boolean;
   content: string;
   onContentChange: (content: string) => void;
   onSave: () => void;
   onCancel: () => void;
+  onStartAdding: () => void;
 }
 
 const AddNoteForm = ({
@@ -12,14 +15,21 @@ const AddNoteForm = ({
   content,
   onContentChange,
   onSave,
-  onCancel
+  onCancel,
+  onStartAdding
 }: AddNoteFormProps): JSX.Element => {
+  const { state: authState } = useAuth();
+
+  if (!authState.user) {
+    return <div></div>;
+  }
+
   if (!isAdding) {
     return (
       <div className="add-note-container">
         <button 
           name="add_new_note"
-          onClick={onCancel} // This will start adding in the parent component
+          onClick={onStartAdding}
           className="add-note-button"
         >
           Add New Note

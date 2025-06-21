@@ -12,6 +12,15 @@ const api = axios.create({
   },
 });
 
+// Add token to requests if available
+export const setAuthToken = (token: string | null) => {
+  if (token) {
+    api.defaults.headers['Authorization'] = `Bearer ${token}`;
+  } else {
+    delete api.defaults.headers['Authorization'];
+  }
+};
+
 // Fetch notes for a specific page
 export const fetchNotes = (activePage: number) => {
   return api.get(`/notes`, {

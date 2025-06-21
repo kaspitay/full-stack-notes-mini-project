@@ -16,20 +16,16 @@ interface GetAllNotesResult {
 
 export const getAllNotes = async (params: GetAllNotesParams): Promise<GetAllNotesResult> => {
   try {
-    // Parse page and limit from params, defaulting to page 1 and POSTS_PER_PAGE
     const page = params._page ? parseInt(params._page as string, 10) : 1;
     const limit = params._per_page || params._limit 
       ? parseInt((params._per_page || params._limit) as string, 10) 
       : POSTS_PER_PAGE;
     
     const skip = (page - 1) * limit;
-
-    // Get the total count of notes
     const count = await Note.countDocuments();
     
-    // Get the notes for the current page, sorted by _id in descending order
     const notes = await Note.find()
-      .sort({ _id: -1 }) // Newest first
+      .sort({ _id: -1 })
       .skip(skip)
       .limit(limit);
 
@@ -55,7 +51,6 @@ export const getNoteById = async (id: string): Promise<INote> => {
 export const getNoteByIndex = async (index: number): Promise<INote> => {
   const skip = index;
   
-  // Find notes sorted by _id in descending order and take the one at the specified index
   const notes = await Note.find()
     .sort({ _id: -1 })
     .skip(skip)

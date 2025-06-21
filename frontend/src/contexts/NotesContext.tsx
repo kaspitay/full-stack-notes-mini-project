@@ -1,7 +1,6 @@
 import React, { createContext, useReducer, useContext } from 'react';
 import { Note } from '../types';
 
-// State structure
 export type NotesState = {
   notes: Note[];
   loading: boolean;
@@ -13,9 +12,10 @@ export type NotesState = {
   editedContent: string;
   isAddingNote: boolean;
   newNoteContent: string;
+  cachedPages: Map<number, { notes: Note[]; totalPages: number; timestamp: number }>;
+  currentVisiblePages: number[];
 }
 
-// Action types
 export type NotesAction = 
   | { type: 'FETCH_NOTES_REQUEST' }
   | { type: 'FETCH_NOTES_SUCCESS'; payload: { notes: Note[]; totalPages: number } }
@@ -31,9 +31,13 @@ export type NotesAction =
   | { type: 'SET_EDITED_CONTENT'; payload: string }
   | { type: 'START_ADDING_NOTE' }
   | { type: 'CANCEL_ADDING_NOTE' }
-  | { type: 'SET_NEW_NOTE_CONTENT'; payload: string };
+  | { type: 'SET_NEW_NOTE_CONTENT'; payload: string }
+  | { type: 'CACHE_PAGE'; payload: { page: number; notes: Note[]; totalPages: number } }
+  | { type: 'LOAD_FROM_CACHE'; payload: { page: number } }
+  | { type: 'SET_VISIBLE_PAGES'; payload: number[] }
+  | { type: 'CLEAR_CACHE' }
+  | { type: 'INVALIDATE_CACHE_PAGES'; payload: number[] };
 
-// Initial state
 const initialState: NotesState = {
   notes: [],
   loading: false,
@@ -44,10 +48,11 @@ const initialState: NotesState = {
   editingNoteId: null,
   editedContent: '',
   isAddingNote: false,
-  newNoteContent: ''
+  newNoteContent: '',
+  cachedPages: new Map(),
+  currentVisiblePages: [1, 2, 3, 4, 5]
 };
 
-// Reducer function
 const notesReducer = (state: NotesState, action: NotesAction): NotesState => {
   switch (action.type) {
     case 'FETCH_NOTES_REQUEST':
@@ -62,20 +67,38 @@ const notesReducer = (state: NotesState, action: NotesAction): NotesState => {
       return {
         ...state, 
         notification: 'Added a new note', 
-        notes: [action.payload, ...state.notes.slice(0, 9)],
+        notes: [action.payload, ...state.notes],
+        currentPage: 1,
+        cachedPages: new Map(),
         isAddingNote: false,
         newNoteContent: ''
       };
-    case 'UPDATE_NOTE_SUCCESS':
+    case 'UPDATE_NOTE_SUCCESS': {
+      // Only invalidate current page cache, keep others
+      const updatedCacheForUpdate = new Map(state.cachedPages);
+      updatedCacheForUpdate.delete(state.currentPage);
+      
       return {
         ...state, 
         notification: 'Note updated', 
         notes: state.notes.map(note => note._id === action.payload._id ? action.payload : note),
+        cachedPages: updatedCacheForUpdate,
         editingNoteId: null,
         editedContent: ''
       };
-    case 'DELETE_NOTE_SUCCESS':
-      return {...state, notification: 'Note deleted', notes: state.notes.filter(note => note._id !== action.payload)};
+    }
+    case 'DELETE_NOTE_SUCCESS': {
+      // Only clear current page cache (deletion affects current page)
+      const updatedCacheForDelete = new Map(state.cachedPages);
+      updatedCacheForDelete.delete(state.currentPage);
+      
+      return {
+        ...state, 
+        notification: 'Note deleted', 
+        notes: state.notes.filter(note => note._id !== action.payload),
+        cachedPages: updatedCacheForDelete
+      };
+    }
     case 'SET_NOTIFICATION':
       return {...state, notification: action.payload};
     case 'CLEAR_NOTIFICATION':
@@ -92,6 +115,35 @@ const notesReducer = (state: NotesState, action: NotesAction): NotesState => {
       return {...state, isAddingNote: false, newNoteContent: ''};
     case 'SET_NEW_NOTE_CONTENT':
       return {...state, newNoteContent: action.payload};
+    case 'CACHE_PAGE':
+      const newCache = new Map(state.cachedPages);
+      newCache.set(action.payload.page, {
+        notes: action.payload.notes,
+        totalPages: action.payload.totalPages,
+        timestamp: Date.now()
+      });
+      return {...state, cachedPages: newCache};
+    case 'LOAD_FROM_CACHE': {
+      const cachedData = state.cachedPages.get(action.payload.page);
+      if (cachedData) {
+        return {
+          ...state,
+          notes: cachedData.notes,
+          totalPages: cachedData.totalPages,
+          currentPage: action.payload.page
+        };
+      }
+      return state;
+    }
+    case 'SET_VISIBLE_PAGES':
+      return {...state, currentVisiblePages: action.payload};
+    case 'CLEAR_CACHE':
+      return {...state, cachedPages: new Map()};
+    case 'INVALIDATE_CACHE_PAGES': {
+      const newCache = new Map(state.cachedPages);
+      action.payload.forEach(page => newCache.delete(page));
+      return {...state, cachedPages: newCache};
+    }
     default:
       return state;
   }

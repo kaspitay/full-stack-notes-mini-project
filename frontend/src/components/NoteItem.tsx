@@ -1,4 +1,5 @@
 import { Note } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 
 interface NoteItemProps {
   note: Note;
@@ -22,6 +23,11 @@ const NoteItem = ({
   onContentChange
 }: NoteItemProps): JSX.Element => {
   const isEditing = editingNoteId === note._id;
+  const { state: authState } = useAuth();
+  
+  const canEditDelete = authState.user && 
+    note.author && 
+    authState.user.email === note.author.email;
 
   return (
     <div className="note" data-testid={note._id}>
@@ -52,20 +58,24 @@ const NoteItem = ({
       ) : (
         <>
           {note.content}
-          <div className="note-actions">
-            <button 
-              data-testid={`edit-${note._id}`}
-              onClick={() => onEdit(note)}
-            >
-              Edit
-            </button>
-            <button 
-              name={`delete-${note._id}`}
-              onClick={() => onDelete(note._id)}
-            >
-              Delete
-            </button>
-          </div>
+          {canEditDelete && (
+            <div className="note-actions">
+              <button 
+                data-testid={`edit-${note._id}`}
+                name={`edit-${note._id}`}
+                onClick={() => onEdit(note)}
+              >
+                Edit
+              </button>
+              <button 
+                data-testid={`delete-${note._id}`}
+                name={`delete-${note._id}`}
+                onClick={() => onDelete(note._id)}
+              >
+                Delete
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>

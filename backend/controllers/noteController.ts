@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
 import * as noteService from '../services/noteService';
+import { AuthenticatedRequest } from '../middlewares/auth';
 
 export const getAllNotes = async (req: Request, res: Response): Promise<void> => {
   const { notes, count } = await noteService.getAllNotes(req.query);
   
-  // Set the total count in the header for pagination
   res.set('X-Total-Count', count.toString());
   res.status(200).json(notes);
 };
@@ -26,7 +26,7 @@ export const getNoteByIndex = async (req: Request, res: Response): Promise<void>
   res.status(200).json(note);
 };
 
-export const createNote = async (req: Request, res: Response): Promise<void> => {
+export const createNote = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const { title, author, content } = req.body;
   
   if (!title || !content) {
@@ -34,16 +34,26 @@ export const createNote = async (req: Request, res: Response): Promise<void> => 
     return;
   }
   
-  const newNote = await noteService.createNote({ title, author, content });
+  const noteData: any = { title, author, content };
+  if (req.user) {
+    noteData.user = req.user.id;
+  }
+  
+  const newNote = await noteService.createNote(noteData);
   res.status(201).json(newNote);
 };
 
-export const updateNoteById = async (req: Request, res: Response): Promise<void> => {
+export const updateNoteById = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const { title, author, content } = req.body;
   
-  // Check if any update data was provided
   if (!title && !author && !content) {
     res.status(400).json({ message: 'No update data provided' });
+    return;
+  }
+  
+  const note = await noteService.getNoteById(req.params.id);
+  if (note.user && req.user && note.user.toString() !== req.user.id) {
+    res.status(403).json({ message: 'Unauthorized to edit this note' });
     return;
   }
   
@@ -60,7 +70,6 @@ export const updateNoteByIndex = async (req: Request, res: Response): Promise<vo
     return;
   }
   
-  // Check if any update data was provided
   if (!title && !author && !content) {
     res.status(400).json({ message: 'No update data provided' });
     return;
@@ -70,7 +79,13 @@ export const updateNoteByIndex = async (req: Request, res: Response): Promise<vo
   res.status(200).json(updatedNote);
 };
 
-export const deleteNoteById = async (req: Request, res: Response): Promise<void> => {
+export const deleteNoteById = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const note = await noteService.getNoteById(req.params.id);
+  if (note.user && req.user && note.user.toString() !== req.user.id) {
+    res.status(403).json({ message: 'Unauthorized to delete this note' });
+    return;
+  }
+  
   await noteService.deleteNoteById(req.params.id);
   res.status(204).send();
 };

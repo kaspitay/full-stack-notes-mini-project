@@ -1,82 +1,172 @@
 import { test, expect } from '@playwright/test';
 
-// Test suite for CRUD operations in the notes app
-test.describe('Notes CRUD operations', () => {
-  // Set up the test environment before each test
+test.describe('Complete Notes App Testing', () => {
+  let testUser: {
+    name: string;
+    email: string;
+    username: string;
+    password: string;
+  };
+
   test.beforeEach(async ({ page }) => {
+    testUser = {
+      name: 'Test User',
+      email: `test${Date.now()}@example.com`,
+      username: `testuser${Date.now()}`,
+      password: 'testpassword123'
+    };
+
     await page.goto('http://localhost:3000');
+  });
+
+  // Authentication Tests (Required by Assignment)
+  test('should create user, login, and access protected features', async ({ page }) => {
+    // Create user
+    await page.click('[data-testid="go_to_create_user_button"]');
+    await page.fill('[data-testid="create_user_form_name"]', testUser.name);
+    await page.fill('[data-testid="create_user_form_email"]', testUser.email);
+    await page.fill('[data-testid="create_user_form_username"]', testUser.username);
+    await page.fill('[data-testid="create_user_form_password"]', testUser.password);
+    await page.click('[data-testid="create_user_form_create_user"]');
     
-    // Handle empty database
-    await Promise.race([
-      page.waitForSelector('.notes-list'),
-      page.waitForSelector('.no-notes')
-    ]);
+    await page.waitForURL('http://localhost:3000');
     
-    if (await page.locator('.no-notes').isVisible()) {
-      await page.locator('button[name="add_new_note"]').click();
-      await page.locator('input[name="text_input_new_note"]').fill('Test note');
-      await page.locator('button[name="text_input_save_new_note"]').click();
-      await page.waitForSelector('.notes-list');
+    // Login
+    await page.click('[data-testid="go_to_login_button"]');
+    await page.fill('[data-testid="login_form_username"]', testUser.username);
+    await page.fill('[data-testid="login_form_password"]', testUser.password);
+    await page.click('[data-testid="login_form_login"]');
+    
+    await page.waitForURL('http://localhost:3000');
+    await page.waitForSelector('[data-testid="logout"]');
+    
+    // Should see add note button (only visible when logged in)
+    await expect(page.locator('button[name="add_new_note"]')).toBeVisible();
+  });
+
+  // Guest Access Test (Required by Assignment)
+  test('should view notes without logging in but cannot modify', async ({ page }) => {
+    // Should see login/register buttons
+    await expect(page.locator('[data-testid="go_to_login_button"]')).toBeVisible();
+    await expect(page.locator('[data-testid="go_to_create_user_button"]')).toBeVisible();
+    
+    // Should not see add note button
+    await expect(page.locator('button[name="add_new_note"]')).not.toBeVisible();
+    
+    // Should be able to view existing notes (if any)
+    const notesContainer = page.locator('.notes-container, .notes-list, [data-testid="notes-list"]');
+    await expect(notesContainer).toBeVisible();
+    
+    // Verify that edit/delete buttons are not visible for guests
+    const editButtons = page.locator('button[name*="edit"], button[data-testid*="edit"]');
+    const deleteButtons = page.locator('button[name*="delete"], button[data-testid*="delete"]');
+    
+    // These should either not exist or not be visible to guests
+    const editCount = await editButtons.count();
+    const deleteCount = await deleteButtons.count();
+    
+    if (editCount > 0) {
+      await expect(editButtons.first()).not.toBeVisible();
+    }
+    if (deleteCount > 0) {
+      await expect(deleteButtons.first()).not.toBeVisible();
     }
   });
 
-  // Test for reading notes 
-  test('should display notes', async ({ page }) => {
-    const noteCount = await page.locator('.note').count();
-    expect(noteCount).toBeGreaterThan(0);
+  // Comprehensive CRUD Test (Your Original Strength)
+  test('should perform complete CRUD operations when logged in', async ({ page }) => {
+    // Setup: Login first
+    await page.click('[data-testid="go_to_create_user_button"]');
+    await page.fill('[data-testid="create_user_form_name"]', testUser.name);
+    await page.fill('[data-testid="create_user_form_email"]', testUser.email);
+    await page.fill('[data-testid="create_user_form_username"]', testUser.username);
+    await page.fill('[data-testid="create_user_form_password"]', testUser.password);
+    await page.click('[data-testid="create_user_form_create_user"]');
+    await page.waitForURL('http://localhost:3000');
+    
+    await page.click('[data-testid="go_to_login_button"]');
+    await page.fill('[data-testid="login_form_username"]', testUser.username);
+    await page.fill('[data-testid="login_form_password"]', testUser.password);
+    await page.click('[data-testid="login_form_login"]');
+    await page.waitForURL('http://localhost:3000');
+    await page.waitForSelector('[data-testid="logout"]');
+
+    // CREATE: Add a new note
+    await page.click('button[name="add_new_note"]');
+    const uniqueNoteContent = `CRUD Test Note ${Date.now()}`;
+    await page.fill('input[name="text_input_new_note"]', uniqueNoteContent);
+    await page.click('button[name="text_input_save_new_note"]');
+    
+    // READ: Verify note appears
+    await expect(page.locator(`text=${uniqueNoteContent}`)).toBeVisible();
+    
+    // Get the note element that was just created
+    const noteElement = page.locator('.note').filter({ hasText: uniqueNoteContent });
+    
+    // Verify the note has edit and delete buttons (only visible to logged-in users who own the note)
+    await expect(noteElement.locator('button[name*="edit"], button[data-testid*="edit"]')).toBeVisible();
+    await expect(noteElement.locator('button[name*="delete"], button[data-testid*="delete"]')).toBeVisible();
+    
+    // UPDATE: Edit the note
+    const editButton = noteElement.locator('button[name*="edit"], button[data-testid*="edit"]').first();
+    await editButton.click();
+    
+    // Fill in the updated content (try multiple possible selectors for the edit input)
+    const updatedContent = `Updated ${uniqueNoteContent}`;
+    const editInput = page.locator('input[name*="text_input"], textarea[name*="text_input"], input[data-testid*="text_input"], textarea[data-testid*="text_input"]').first();
+    await editInput.fill(updatedContent);
+    
+    // Save the changes
+    const saveButton = page.locator('button[name*="save"], button[data-testid*="save"]').first();
+    await saveButton.click();
+    
+    // Verify the note was updated
+    await expect(page.locator(`text=${updatedContent}`)).toBeVisible();
+    
+    // DELETE: Remove the note
+    const updatedNoteElement = page.locator('.note').filter({ hasText: updatedContent });
+    const deleteButton = updatedNoteElement.locator('button[name*="delete"], button[data-testid*="delete"]').first();
+    await deleteButton.click();
+    
+    // Verify the note was deleted (content should not be visible anymore)
+    await expect(page.locator(`text=${updatedContent}`)).not.toBeVisible();
+    await expect(page.locator(`text=${uniqueNoteContent}`)).not.toBeVisible();
   });
 
-  // Test for creating a new note 
-  test('should create a new note', async ({ page }) => {
-    await page.locator('button[name="add_new_note"]').click();
-    await page.locator('input[name="text_input_new_note"]').fill('New test note');
-    await page.locator('button[name="text_input_save_new_note"]').click();
+  // Logout Test
+  test('should logout successfully', async ({ page }) => {
+    // Quick login
+    await page.click('[data-testid="go_to_create_user_button"]');
+    await page.fill('[data-testid="create_user_form_name"]', testUser.name);
+    await page.fill('[data-testid="create_user_form_email"]', testUser.email);
+    await page.fill('[data-testid="create_user_form_username"]', testUser.username);
+    await page.fill('[data-testid="create_user_form_password"]', testUser.password);
+    await page.click('[data-testid="create_user_form_create_user"]');
+    await page.waitForURL('http://localhost:3000');
     
-    await expect(page.locator('.note').first()).toContainText('New test note');
+    await page.click('[data-testid="go_to_login_button"]');
+    await page.fill('[data-testid="login_form_username"]', testUser.username);
+    await page.fill('[data-testid="login_form_password"]', testUser.password);
+    await page.click('[data-testid="login_form_login"]');
+    await page.waitForURL('http://localhost:3000');
+    await page.waitForSelector('[data-testid="logout"]');
+
+    // Logout
+    await page.click('[data-testid="logout"]');
+    
+    // Verify logged out state
+    await expect(page.locator('[data-testid="go_to_login_button"]')).toBeVisible();
+    await expect(page.locator('button[name="add_new_note"]')).not.toBeVisible();
   });
 
-  // Test for updating a note 
-  test('should update a note', async ({ page }) => {
-    const noteId = await page.locator('.note').first().getAttribute('data-testid');
-    await page.locator(`button[data-testid="edit-${noteId}"]`).click();
-    await page.locator(`textarea[data-testid="text_input-${noteId}"]`).fill('Updated note');
-    await page.locator(`button[data-testid="text_input_save-${noteId}"]`).click();
+  // Error Handling Test
+  test('should handle invalid login credentials', async ({ page }) => {
+    await page.click('[data-testid="go_to_login_button"]');
+    await page.fill('[data-testid="login_form_username"]', 'nonexistent');
+    await page.fill('[data-testid="login_form_password"]', 'wrongpassword');
+    await page.click('[data-testid="login_form_login"]');
     
-    await expect(page.locator('.note').first()).toContainText('Updated note');
-  });
-
-  // Test for deleting a note 
-  test('should delete a note', async ({ page }) => {
-    const noteId = await page.locator('.note').first().getAttribute('data-testid');
-    const noteText = await page.locator('.note').first().textContent();
-    
-    // Fixed: Using name attribute instead of data-testid for delete button
-    await page.locator(`button[name="delete-${noteId}"]`).click();
-    
-    // Wait for notification
-    await page.waitForSelector('.notification:has-text("deleted")');
-    
-    // Check that the content of the deleted note is no longer on the page
-    const pageContent = await page.textContent('body');
-    expect(pageContent).not.toContain(noteText);
-  });
-
-  // Clean up test data after all tests
-  test.afterAll(async ({ request }) => {
-    try {
-      // Get the test notes created during the test
-      const response = await request.get('http://localhost:3001/api/notes?_page=1&_per_page=5');
-      const notes = await response.json();
-      
-      // Delete only the test notes (those with titles containing "test" or "Test")
-      for (const note of notes) {
-        if (note.title.toLowerCase().includes('test') || 
-            (note.content && note.content.toLowerCase().includes('test'))) {
-          await request.delete(`http://localhost:3001/api/notes/${note._id}`);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to clean up test data:', error);
-    }
+    // Should stay on login page
+    await expect(page.url()).toContain('/login');
   });
 });

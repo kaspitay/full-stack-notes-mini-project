@@ -9,6 +9,7 @@ export interface INote extends Document {
   title: string;
   author: IAuthor | null;
   content: string;
+  user?: mongoose.Schema.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -22,7 +23,12 @@ const NoteSchema = new Schema<INote>(
   {
     title: { type: String, required: true },
     author: { type: AuthorSchema, required: false, default: null },
-    content: { type: String, required: true }
+    content: { type: String, required: true },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: false
+    }
   },
   { timestamps: true }
 );
