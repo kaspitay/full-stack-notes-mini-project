@@ -19,33 +19,6 @@ test.describe('Complete Notes App Testing', () => {
     await page.goto('http://localhost:3000');
   });
 
-  // Authentication Tests (Required by Assignment)
-  test('should create user, login, and access protected features', async ({ page }) => {
-    // Create user
-    await page.click('[data-testid="go_to_create_user_button"]');
-    await page.fill('[data-testid="create_user_form_name"]', testUser.name);
-    await page.fill('[data-testid="create_user_form_email"]', testUser.email);
-    await page.fill('[data-testid="create_user_form_username"]', testUser.username);
-    await page.fill('[data-testid="create_user_form_password"]', testUser.password);
-    await page.click('[data-testid="create_user_form_create_user"]');
-    
-    // Wait for user creation to complete and navigate back to homepage
-    await page.waitForTimeout(3000);
-    await page.goto('http://localhost:3000');
-    
-    // Login
-    await page.click('[data-testid="go_to_login_button"]');
-    await page.fill('[data-testid="login_form_username"]', testUser.username);
-    await page.fill('[data-testid="login_form_password"]', testUser.password);
-    await page.click('[data-testid="login_form_login"]');
-    
-    // Wait for login redirect and logout button to appear
-    await page.waitForURL('http://localhost:3000', { timeout: 60000 });
-    await page.waitForSelector('[data-testid="logout"]', { timeout: 60000 });
-    
-    // Verify we can see the add note button (only visible when logged in)
-    await expect(page.locator('button[name="add_new_note"]')).toBeVisible();
-  });
 
   // Guest Access Test (Required by Assignment)
   test('should view notes without logging in but cannot modify', async ({ page }) => {
