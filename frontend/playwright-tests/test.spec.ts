@@ -24,6 +24,25 @@ test.describe('Complete Notes App Testing', () => {
 
   // Comprehensive CRUD Test (Your Original Strength)
   test('should perform complete CRUD operations when logged in', async ({ page }) => {
+    // Wait for backend to be ready by checking health endpoint
+    let backendReady = false;
+    for (let i = 0; i < 30; i++) {
+      try {
+        const healthCheck = await page.request.get('http://localhost:3001/api/health');
+        if (healthCheck.ok()) {
+          backendReady = true;
+          break;
+        }
+      } catch (e) {
+        // Backend not ready yet
+      }
+      await page.waitForTimeout(1000);
+    }
+    
+    if (!backendReady) {
+      throw new Error('Backend not ready after 30 seconds');
+    }
+
     // Setup: Create user via backend API first to avoid UI timing/race issues
     const createResponse = await page.request.post('http://localhost:3001/api/users', {
       data: {
@@ -92,6 +111,25 @@ test.describe('Complete Notes App Testing', () => {
 
   // Logout Test
   test('should logout successfully', async ({ page }) => {
+    // Wait for backend to be ready
+    let backendReady = false;
+    for (let i = 0; i < 30; i++) {
+      try {
+        const healthCheck = await page.request.get('http://localhost:3001/api/health');
+        if (healthCheck.ok()) {
+          backendReady = true;
+          break;
+        }
+      } catch (e) {
+        // Backend not ready yet
+      }
+      await page.waitForTimeout(1000);
+    }
+    
+    if (!backendReady) {
+      throw new Error('Backend not ready after 30 seconds');
+    }
+
     // Create user via backend API first
     const createResponse = await page.request.post('http://localhost:3001/api/users', {
       data: {
@@ -151,6 +189,25 @@ test.describe('XSS and Security Features', () => {
     };
 
     await page.goto('http://localhost:3000');
+
+    // Wait for backend to be ready
+    let backendReady = false;
+    for (let i = 0; i < 30; i++) {
+      try {
+        const healthCheck = await page.request.get('http://localhost:3001/api/health');
+        if (healthCheck.ok()) {
+          backendReady = true;
+          break;
+        }
+      } catch (e) {
+        // Backend not ready yet
+      }
+      await page.waitForTimeout(1000);
+    }
+    
+    if (!backendReady) {
+      throw new Error('Backend not ready after 30 seconds');
+    }
 
     // Create user via backend API for reliability
     const createResponse = await page.request.post('http://localhost:3001/api/users', {
