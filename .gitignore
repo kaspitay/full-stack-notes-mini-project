@@ -1,0 +1,78 @@
+# Dependencies
+/backend/node_modules
+/frontend/node_modules
+node_modules/
+
+# Environment files (secrets - never commit!)
+/backend/.env
+*.env
+*.env.local
+*.env.development.local
+*.env.test.local
+*.env.production.local
+
+# Logs and runtime files
+/backend/log.txt
+*.log
+backend.log
+frontend.log
+attacker.log
+keylog.txt
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+/frontend/dist
+/backend/dist
+*.tsbuildinfo
+build/
+
+# Package locks (as requested by the assignment)
+/backend/package-lock.json
+/frontend/package-lock.json
+package-lock.json
+yarn.lock
+
+# Testing artifacts
+/frontend/test-results
+/backend/test-results
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Presubmission testing artifacts (temporary folders)
+presubmission_tests/
+tmp_submission_check/
+tmp_submission_check_extended/
+
+# Documentation files created during development (not core requirements)
+README_HW4.md
+IMPLEMENTATION_SUMMARY.md
+XSS_PAYLOADS.md
+demo_xss.sh
+start_hw4.sh
+README\ \(6\).md
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-*
+
+# OS specific
+.DS_Store
+**/.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Archive files (submissions should be via git, not zip)
+*.zip
+*.tar.gz
+*.rar
