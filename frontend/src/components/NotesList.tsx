@@ -25,15 +25,15 @@ const NotesList = ({
   deleteNoteById
 }: NotesListProps) => {
   if (loading) {
-    return <div className="loading">Loading notes...</div>;
+    return <div className="loading" data-testid="notes-loading">Loading notes...</div>;
   }
 
   if (notes.length === 0) {
-    return <div className="no-notes">No notes found</div>;
+    return <div className="no-notes" data-testid="notes-empty">No notes found</div>;
   }
 
   return (
-    <div className="notes-list">
+    <div className="notes-list" data-testid="notes-list">
       {notes.map(note => (
         <NoteItem
           key={note._id}
