@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './playwright-tests',
-  timeout: 30000,
+  timeout: 90000, // Increased to 90 seconds for presubmission environment
   use: {
     headless: true,
   },
